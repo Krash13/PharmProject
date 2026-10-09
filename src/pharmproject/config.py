@@ -85,8 +85,24 @@ class Stage3Config(BaseModel):
     filters: list[AdmetRule] = Field(default_factory=_default_admet_rules)
 
 
+class Stage4Config(BaseModel):
+    """Настройки этапа 4 — предсказание pIC50 (ChemBERTa).
+
+    Пути input_dir/output_dir/checkpoint_path задаются относительно data_dir.
+    """
+
+    input_dir: str = "intermediate/stage3_admet"
+    output_dir: str = "intermediate/stage4_scored"
+    checkpoint_path: str = "artifacts/chemberta_InhA"
+    model_name: str = "seyonec/ChemBERTa-zinc-base-v1"
+    batch_size: int = 128
+    shard_rows: int = 1_000_000
+    device: str = "cpu"  # cpu | cuda | auto
+    top_n: int = 10000
+
+
 class ThresholdsConfig(BaseModel):
-    """Пороги фильтров этапа 2. Настраиваются при запуске (конфиг + флаги CLI)."""
+    """Пороги фильтров этапов 2 и 4. Настраиваются при запуске (конфиг + флаги CLI)."""
 
     mw_min: float = 150.0
     mw_max: float = 350.0
@@ -95,6 +111,7 @@ class ThresholdsConfig(BaseModel):
     hbd_max: int = 5
     hba_max: int = 10
     tpsa_max: float | None = None  # None = не проверяем
+    pic50_min: float = 6.0  # отсечка по pIC50 (этап 4)
 
 
 class Config(BaseModel):
@@ -103,6 +120,7 @@ class Config(BaseModel):
     stage1: Stage1Config = Field(default_factory=Stage1Config)
     stage2: Stage2Config = Field(default_factory=Stage2Config)
     stage3: Stage3Config = Field(default_factory=Stage3Config)
+    stage4: Stage4Config = Field(default_factory=Stage4Config)
     thresholds: ThresholdsConfig = Field(default_factory=ThresholdsConfig)
 
 

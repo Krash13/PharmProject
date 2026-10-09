@@ -48,6 +48,16 @@ stage3:
     - {property: BRENK_alert, op: "==", value: 0.0}
     - {property: HIA_Hou, op: ">=", value: 0.5}
 
+stage4:
+  input_dir: intermediate/stage3_admet
+  output_dir: intermediate/stage4_scored
+  checkpoint_path: artifacts/chemberta_InhA
+  model_name: seyonec/ChemBERTa-zinc-base-v1
+  batch_size: 128
+  shard_rows: 1000000
+  device: cpu   # cpu | cuda | auto
+  top_n: 10000
+
 thresholds:
   mw_min: 150.0
   mw_max: 350.0
@@ -56,3 +66,4 @@ thresholds:
   hbd_max: 5
   hba_max: 10
   # tpsa_max: null   # если задан — дополнительно проверяем TPSA <= значение
+  pic50_min: 6.0   # отсечка по pIC50 (этап 4)
