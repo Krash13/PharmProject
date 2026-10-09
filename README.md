@@ -133,7 +133,7 @@ python -c 'import torch; print(torch.cuda.is_available(), torch.cuda.device_coun
 ## 1. Установка
 
 ```bash
-git clone <репозиторий> && cd PharmProject
+git clone https://github.com/Krash13/PharmProject.git && cd PharmProject
 
 # Быстрый путь — один скрипт:
 bash scripts/setup_prod.sh
