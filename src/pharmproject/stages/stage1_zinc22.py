@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import gzip
-import json
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -16,6 +15,7 @@ import structlog
 
 from pharmproject.adapters.zinc22 import Zinc22Client
 from pharmproject.pipeline.base import PipelineContext, Stage, StageOutput
+from pharmproject.storage.checkpoint import load_progress, save_progress
 from pharmproject.storage.paths import downloads_dir, progress_file, shards_dir
 from pharmproject.storage.store import ParquetShardWriter
 
@@ -38,7 +38,7 @@ class Stage1Zinc22(Stage):
         dl_dir = downloads_dir(ctx.data_dir)
         shard_dir = shards_dir(ctx.data_dir)
         progress_path = progress_file(ctx.data_dir)
-        progress = _load_progress(progress_path)
+        progress = load_progress(progress_path)
 
         writer = ParquetShardWriter(shard_dir, cfg.shard_rows)
         downloaded_files = 0
@@ -70,7 +70,7 @@ class Stage1Zinc22(Stage):
                     parsed_records += 1
 
                 progress[key] = "done"
-                _save_progress(progress_path, progress)
+                save_progress(progress_path, progress)
         finally:
             written = writer.close()
 
@@ -115,17 +115,6 @@ def _read_manifest(manifest_path: str) -> list[str]:
         for line in text.splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
-
-
-def _load_progress(path: Path) -> dict:
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
-    return {}
-
-
-def _save_progress(path: Path, progress: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(progress, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def iter_records(

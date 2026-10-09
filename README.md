@@ -139,9 +139,9 @@ pip install -e ".[dev]"
 cp config/config.example.yaml config/config.yaml
 #    указать мишень (target, по умолчанию InhA), пути, веса моделей, пороги
 
-# 3. запуск всей воронки или отдельной стадии
-python -m pharmproject run all
-python -m pharmproject run stage4 --resume
+# 3. запуск отдельной стадии
+python -m pharmproject stage1
+python -m pharmproject stage4 --resume
 ```
 
 ## Ссылки

@@ -1,4 +1,4 @@
-"""CLI: python -m pharmproject run <stage> [--resume] [--config PATH]."""
+"""CLI: python -m pharmproject <stage> [--resume] [--config PATH]."""
 
 from __future__ import annotations
 
@@ -7,13 +7,10 @@ import typer
 from pharmproject.config import load_config
 from pharmproject.pipeline.runner import run_stage
 
-app = typer.Typer(add_completion=False, no_args_is_help=True)
 
-
-@app.command()
-def run(
+def main(
     stage: str = typer.Argument(..., help="Имя стадии, например stage1"),
-    resume: bool = typer.Option(False, "--resume", help="Пропускать уже обработанные tranche"),
+    resume: bool = typer.Option(False, "--resume", help="Пропускать уже обработанные шарды"),
     config: str = typer.Option("config/config.yaml", "--config", help="Путь к YAML-конфигу"),
 ) -> None:
     """Запускает стадию воронки."""
@@ -22,9 +19,10 @@ def run(
     typer.echo(f"Стадия {stage} завершена. Шардов: {len(out.paths)}. Статистика: {out.stats}")
 
 
-def main() -> None:
-    app()
+def cli() -> None:
+    """Точка входа CLI (python -m pharmproject и консольный скрипт)."""
+    typer.run(main)
 
 
 if __name__ == "__main__":
-    main()
+    cli()

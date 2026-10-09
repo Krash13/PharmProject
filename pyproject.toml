@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-pharmproject = "pharmproject.cli:app"
+pharmproject = "pharmproject.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -36,17 +36,32 @@ class Stage1Config(BaseModel):
     retry_wait: float = 1.0
 
 
-class ThresholdsConfig(BaseModel):
-    """Пороги фильтров (используются с этапа 2). Настраиваются при запуске."""
+class Stage2Config(BaseModel):
+    """Настройки этапа 2 — дескрипторы и фильтры (RDKit, CPU)."""
 
+    input_dir: str = "data/raw/zinc22/shards"
+    output_dir: str = "data/intermediate/stage2_filtered"
+    shard_rows: int = 1_000_000
+    filter_rule: str = "lead-like"  # lead-like | lipinski | none
+
+
+class ThresholdsConfig(BaseModel):
+    """Пороги фильтров этапа 2. Настраиваются при запуске (конфиг + флаги CLI)."""
+
+    mw_min: float = 150.0
     mw_max: float = 350.0
     logp_max: float = 3.5
+    rot_bonds_max: int = 7
+    hbd_max: int = 5
+    hba_max: int = 10
+    tpsa_max: float | None = None  # None = не проверяем
 
 
 class Config(BaseModel):
     data_dir: str = "data"
     target: TargetConfig = Field(default_factory=TargetConfig)
     stage1: Stage1Config = Field(default_factory=Stage1Config)
+    stage2: Stage2Config = Field(default_factory=Stage2Config)
     thresholds: ThresholdsConfig = Field(default_factory=ThresholdsConfig)
 
 

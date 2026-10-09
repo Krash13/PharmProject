@@ -23,6 +23,17 @@ stage1:
   max_retries: 5
   retry_wait: 1.0
 
+stage2:
+  input_dir: data/raw/zinc22/shards
+  output_dir: data/intermediate/stage2_filtered
+  shard_rows: 1000000
+  filter_rule: lead-like   # lead-like | lipinski | none
+
 thresholds:
+  mw_min: 150.0
   mw_max: 350.0
   logp_max: 3.5
+  rot_bonds_max: 7
+  hbd_max: 5
+  hba_max: 10
+  # tpsa_max: null   # если задан — дополнительно проверяем TPSA <= значение
