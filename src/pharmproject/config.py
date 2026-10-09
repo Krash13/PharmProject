@@ -49,11 +49,14 @@ class Stage2Config(BaseModel):
 
 
 class AdmetRule(BaseModel):
-    """Правило ADMET-фильтра: свойство + сравнение + порог."""
+    """Правило ADMET-фильтра: свойство + сравнение + порог.
+
+    value может быть числом (порог) или строкой (например "Accepted").
+    """
 
     property: str
     op: str = "<="  # <= >= < > == !=
-    value: float
+    value: float | str
 
 
 def _default_admet_rules() -> list[AdmetRule]:
@@ -118,6 +121,38 @@ class Stage5Config(BaseModel):
     binder_threshold: float = 0.5  # affinity_probability_binary >= порог
 
 
+def _default_final_admet_rules() -> list[AdmetRule]:
+    return [
+        AdmetRule(property="hERG", op="<=", value=0.5),
+        AdmetRule(property="H-HT", op="<=", value=0.5),
+        AdmetRule(property="DILI", op="<=", value=0.5),
+        AdmetRule(property="Ames", op="<=", value=0.5),
+        AdmetRule(property="CYP3A4-inh", op="<=", value=0.5),
+        AdmetRule(property="CYP2D6-inh", op="<=", value=0.5),
+        AdmetRule(property="PAINS", op="==", value=0.0),
+        AdmetRule(property="Lipinski", op="==", value="Accepted"),
+        AdmetRule(property="Pfizer", op="==", value="Accepted"),
+        AdmetRule(property="GSK", op="==", value="Accepted"),
+    ]
+
+
+class Stage6Config(BaseModel):
+    """Настройки этапа 6 — финальный ADMET (ADMETlab 2.0, веб-сервис).
+
+    Пути input_dir/output_dir задаются относительно data_dir. Обращения к
+    admetmesh.scbdd.com идут по HTTP с ретраями и кэшем.
+    """
+
+    input_dir: str = "intermediate/stage5_boltz"
+    output_dir: str = "intermediate/stage6_final_admet"
+    base_url: str = "https://admetmesh.scbdd.com"
+    batch_size: int = 100  # молекул за запрос (API: максимум 500)
+    shard_rows: int = 1_000_000
+    timeout_s: float = 60.0
+    max_retries: int = 5
+    filters: list[AdmetRule] = Field(default_factory=_default_final_admet_rules)
+
+
 class ThresholdsConfig(BaseModel):
     """Пороги фильтров этапов 2 и 4. Настраиваются при запуске (конфиг + флаги CLI)."""
 
@@ -139,6 +174,7 @@ class Config(BaseModel):
     stage3: Stage3Config = Field(default_factory=Stage3Config)
     stage4: Stage4Config = Field(default_factory=Stage4Config)
     stage5: Stage5Config = Field(default_factory=Stage5Config)
+    stage6: Stage6Config = Field(default_factory=Stage6Config)
     thresholds: ThresholdsConfig = Field(default_factory=ThresholdsConfig)
 
 

@@ -42,17 +42,29 @@ _OPS = {
 
 
 def passes_admet_filters(preds: dict, rules) -> bool:
-    """Проверяет предсказания ADMET-AI по набору правил (AND).
+    """Проверяет предсказания ADMET по набору правил (AND).
 
-    Возвращает False, если свойство отсутствует, равно NaN или нарушает правило.
+    Возвращает False, если свойство отсутствует, пустое, NaN или нарушает правило.
+    Правила с текстовым значением (например "Accepted") сравниваются как строки,
+    с числовым — как числа.
     """
     for rule in rules:
         op = _OPS.get(rule.op)
         if op is None:
             raise ValueError(f"Неизвестный оператор в правиле ADMET: {rule.op!r}")
         val = preds.get(rule.property)
-        if val is None or val != val:  # отсутствует или NaN
+        if val is None or val == "":
             return False
-        if not op(float(val), rule.value):
-            return False
+        if isinstance(rule.value, str):
+            if not op(str(val), rule.value):
+                return False
+        else:
+            try:
+                num = float(val)
+            except (TypeError, ValueError):
+                return False
+            if num != num:  # NaN
+                return False
+            if not op(num, float(rule.value)):
+                return False
     return True

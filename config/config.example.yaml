@@ -68,6 +68,26 @@ stage5:
   top_n: 1000
   binder_threshold: 0.5
 
+stage6:
+  input_dir: intermediate/stage5_boltz
+  output_dir: intermediate/stage6_final_admet
+  base_url: https://admetmesh.scbdd.com
+  batch_size: 100          # молекул за запрос (API: максимум 500)
+  shard_rows: 1000000
+  timeout_s: 60.0
+  max_retries: 5
+  filters:
+    - {property: hERG, op: "<=", value: 0.5}
+    - {property: H-HT, op: "<=", value: 0.5}
+    - {property: DILI, op: "<=", value: 0.5}
+    - {property: Ames, op: "<=", value: 0.5}
+    - {property: CYP3A4-inh, op: "<=", value: 0.5}
+    - {property: CYP2D6-inh, op: "<=", value: 0.5}
+    - {property: PAINS, op: "==", value: 0.0}
+    - {property: Lipinski, op: "==", value: "Accepted"}
+    - {property: Pfizer, op: "==", value: "Accepted"}
+    - {property: GSK, op: "==", value: "Accepted"}
+
 thresholds:
   mw_min: 150.0
   mw_max: 350.0
