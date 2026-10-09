@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pharmproject"
+version = "0.1.0"
+description = "Виртуальный скрининг: воронка от ZINC22 до PK-кандидатов"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27",
+    "tenacity>=8.2",
+    "pyarrow>=15.0",
+    "typer>=0.12",
+    "pydantic>=2.5",
+    "PyYAML>=6.0",
+    "structlog>=24.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+pharmproject = "pharmproject.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: обращается к реальной сети (скачивание), пропускается по умолчанию",
+]

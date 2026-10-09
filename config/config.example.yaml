@@ -1,0 +1,28 @@
+# PharmProject — пример конфигурации.
+# Скопируйте в config/config.yaml и при необходимости отредактируйте.
+
+data_dir: data
+
+target:
+  name: InhA               # мишень по умолчанию (туберкулёз)
+  uniprot_id: P9WGR1
+  # structure_path: path/to/target.pdb   # загрузить свою структуру
+  # sequence: MKV...                     # или последовательность
+
+stage1:
+  base_url: https://files.docking.org/
+  subset: lead-like
+  # tranches:                          # точечная загрузка (URL, относительный путь или локальный файл)
+  #   - lead-like/AA/AAAAAA.smi.gz
+  # manifest_path: config/lead-like.manifest.txt   # список tranche — по одной записи на строку
+  output_dir: data/raw/zinc22
+  shard_rows: 1000000
+  delimiter: " "
+  column_order: [smiles, zinc_id]
+  timeout_s: 60.0
+  max_retries: 5
+  retry_wait: 1.0
+
+thresholds:
+  mw_max: 350.0
+  logp_max: 3.5
