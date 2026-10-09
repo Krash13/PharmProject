@@ -66,6 +66,26 @@ STAGE4_SCHEMA = pa.schema(
     ]
 )
 
+STAGE5_SCHEMA = pa.schema(
+    [
+        ("zinc_id", pa.string()),
+        ("smiles", pa.string()),
+        ("inchi_key", pa.string()),
+        ("mw", pa.float64()),
+        ("logp", pa.float64()),
+        ("hbd", pa.int64()),
+        ("hba", pa.int64()),
+        ("tpsa", pa.float64()),
+        ("rot_bonds", pa.int64()),
+        ("qed", pa.float64()),
+        ("tranche", pa.string()),
+        ("admet", pa.string()),
+        ("pic50", pa.float64()),
+        ("affinity_pred_value", pa.float64()),
+        ("affinity_probability_binary", pa.float64()),
+    ]
+)
+
 
 class ParquetShardWriter:
     """Пишет записи в Parquet-шарды фиксированного размера."""

@@ -101,6 +101,23 @@ class Stage4Config(BaseModel):
     top_n: int = 10000
 
 
+class Stage5Config(BaseModel):
+    """Настройки этапа 5 — докинг/аффинность (Boltz).
+
+    Пути input_dir/output_dir задаются относительно data_dir. Boltz запускается
+    на Linux-сервере с NVIDIA GPU; на dev-машине используется мок в тестах.
+    """
+
+    input_dir: str = "intermediate/stage4_scored"
+    output_dir: str = "intermediate/stage5_boltz"
+    boltz_command: str = "boltz"  # путь к CLI boltz (на сервере)
+    device: str = "cuda"  # cpu | cuda | auto
+    batch_size: int = 32  # молекул за один прогон boltz
+    shard_rows: int = 1_000_000
+    top_n: int = 1000
+    binder_threshold: float = 0.5  # affinity_probability_binary >= порог
+
+
 class ThresholdsConfig(BaseModel):
     """Пороги фильтров этапов 2 и 4. Настраиваются при запуске (конфиг + флаги CLI)."""
 
@@ -121,6 +138,7 @@ class Config(BaseModel):
     stage2: Stage2Config = Field(default_factory=Stage2Config)
     stage3: Stage3Config = Field(default_factory=Stage3Config)
     stage4: Stage4Config = Field(default_factory=Stage4Config)
+    stage5: Stage5Config = Field(default_factory=Stage5Config)
     thresholds: ThresholdsConfig = Field(default_factory=ThresholdsConfig)
 
 
