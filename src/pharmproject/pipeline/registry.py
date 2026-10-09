@@ -9,6 +9,7 @@ from pharmproject.stages.stage3_admet import Stage3Admet
 from pharmproject.stages.stage4_chemberta import Stage4Chemberta
 from pharmproject.stages.stage5_boltz import Stage5Boltz
 from pharmproject.stages.stage6_admetlab import Stage6Admetlab
+from pharmproject.stages.stage7_pk import Stage7Pk
 
 STAGES: dict[str, type[Stage]] = {
     "stage1": Stage1Zinc22,
@@ -17,6 +18,7 @@ STAGES: dict[str, type[Stage]] = {
     "stage4": Stage4Chemberta,
     "stage5": Stage5Boltz,
     "stage6": Stage6Admetlab,
+    "stage7": Stage7Pk,
 }
 
 

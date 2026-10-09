@@ -153,6 +153,35 @@ class Stage6Config(BaseModel):
     filters: list[AdmetRule] = Field(default_factory=_default_final_admet_rules)
 
 
+class Stage7Config(BaseModel):
+    """Настройки этапа 7 — фармакокинетическое моделирование (PyPharm + KrasheMit).
+
+    CL/Vss/fu берутся из JSON `admetlab` (этап 6). Пути относительно data_dir.
+    """
+
+    input_dir: str = "intermediate/stage6_final_admet"
+    output_dir: str = "intermediate/stage7_pk"
+    cl_column: str = "CL"
+    vss_column: str = "VDss"
+    fu_column: str = "Fu"
+    body_weight_kg: float = 70.0
+    vc: float = 4.5  # л
+    qfast: float = 150.0  # л/ч
+    qslow: float = 30.0  # л/ч
+    dose: float = 100.0  # мг — доза для симуляции одной дозы
+    max_time: float = 24.0  # ч
+    shard_rows: int = 1_000_000
+    optimize_dosing: bool = True
+    cmin: float = 1.0
+    cmax: float = 10.0
+    horizon: float = 72.0  # ч — горизонт повторного дозирования
+    dose_min: float = 1.0
+    dose_max: float = 1000.0
+    tau_min: float = 4.0
+    tau_max: float = 24.0
+    ico_tmax: int = 200
+
+
 class ThresholdsConfig(BaseModel):
     """Пороги фильтров этапов 2 и 4. Настраиваются при запуске (конфиг + флаги CLI)."""
 
@@ -175,6 +204,7 @@ class Config(BaseModel):
     stage4: Stage4Config = Field(default_factory=Stage4Config)
     stage5: Stage5Config = Field(default_factory=Stage5Config)
     stage6: Stage6Config = Field(default_factory=Stage6Config)
+    stage7: Stage7Config = Field(default_factory=Stage7Config)
     thresholds: ThresholdsConfig = Field(default_factory=ThresholdsConfig)
 
 

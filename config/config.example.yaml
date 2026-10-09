@@ -88,6 +88,29 @@ stage6:
     - {property: Pfizer, op: "==", value: "Accepted"}
     - {property: GSK, op: "==", value: "Accepted"}
 
+stage7:
+  input_dir: intermediate/stage6_final_admet
+  output_dir: intermediate/stage7_pk
+  cl_column: CL
+  vss_column: VDss
+  fu_column: Fu
+  body_weight_kg: 70.0
+  vc: 4.5            # л
+  qfast: 150.0       # л/ч
+  qslow: 30.0        # л/ч
+  dose: 100.0        # мг
+  max_time: 24.0     # ч
+  shard_rows: 1000000
+  optimize_dosing: true
+  cmin: 1.0
+  cmax: 10.0
+  horizon: 72.0      # ч
+  dose_min: 1.0
+  dose_max: 1000.0
+  tau_min: 4.0
+  tau_max: 24.0
+  ico_tmax: 200
+
 thresholds:
   mw_min: 150.0
   mw_max: 350.0
