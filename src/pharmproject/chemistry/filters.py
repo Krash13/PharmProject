@@ -1,7 +1,8 @@
-"""Правила-фильтры для этапа 2."""
+"""Правила-фильтры для этапов 2–3."""
 
 from __future__ import annotations
 
+import operator
 from typing import Callable
 
 from pharmproject.chemistry.descriptors import DescriptorSet
@@ -28,3 +29,30 @@ def make_filter(rule: str, th: ThresholdsConfig) -> Callable[[DescriptorSet], bo
     if rule in ("none", ""):
         return lambda d: True
     raise ValueError(f"Неизвестное правило фильтра: {rule!r}")
+
+
+_OPS = {
+    "<=": operator.le,
+    ">=": operator.ge,
+    "<": operator.lt,
+    ">": operator.gt,
+    "==": operator.eq,
+    "!=": operator.ne,
+}
+
+
+def passes_admet_filters(preds: dict, rules) -> bool:
+    """Проверяет предсказания ADMET-AI по набору правил (AND).
+
+    Возвращает False, если свойство отсутствует, равно NaN или нарушает правило.
+    """
+    for rule in rules:
+        op = _OPS.get(rule.op)
+        if op is None:
+            raise ValueError(f"Неизвестный оператор в правиле ADMET: {rule.op!r}")
+        val = preds.get(rule.property)
+        if val is None or val != val:  # отсутствует или NaN
+            return False
+        if not op(float(val), rule.value):
+            return False
+    return True

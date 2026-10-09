@@ -1,5 +1,6 @@
 # PharmProject — пример конфигурации.
 # Скопируйте в config/config.yaml и при необходимости отредактируйте.
+# Пути стадий задаются относительно data_dir.
 
 data_dir: data
 
@@ -15,7 +16,7 @@ stage1:
   # tranches:                          # точечная загрузка (URL, относительный путь или локальный файл)
   #   - lead-like/AA/AAAAAA.smi.gz
   # manifest_path: config/lead-like.manifest.txt   # список tranche — по одной записи на строку
-  output_dir: data/raw/zinc22
+  output_dir: raw/zinc22
   shard_rows: 1000000
   delimiter: " "
   column_order: [smiles, zinc_id]
@@ -24,10 +25,28 @@ stage1:
   retry_wait: 1.0
 
 stage2:
-  input_dir: data/raw/zinc22/shards
-  output_dir: data/intermediate/stage2_filtered
+  input_dir: raw/zinc22/shards
+  output_dir: intermediate/stage2_filtered
   shard_rows: 1000000
   filter_rule: lead-like   # lead-like | lipinski | none
+
+stage3:
+  input_dir: intermediate/stage2_filtered
+  output_dir: intermediate/stage3_admet
+  shard_rows: 1000000
+  batch_size: 1000
+  device: cpu   # cpu | cuda | auto
+  filters:
+    - {property: hERG, op: "<=", value: 0.5}
+    - {property: DILI, op: "<=", value: 0.5}
+    - {property: ClinTox, op: "<=", value: 0.5}
+    - {property: AMES, op: "<=", value: 0.5}
+    - {property: Carcinogens_Lagunin, op: "<=", value: 0.5}
+    - {property: CYP3A4_Veith, op: "<=", value: 0.5}
+    - {property: CYP2D6_Veith, op: "<=", value: 0.5}
+    - {property: PAINS_alert, op: "==", value: 0.0}
+    - {property: BRENK_alert, op: "==", value: 0.0}
+    - {property: HIA_Hou, op: ">=", value: 0.5}
 
 thresholds:
   mw_min: 150.0

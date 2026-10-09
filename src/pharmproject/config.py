@@ -27,7 +27,7 @@ class Stage1Config(BaseModel):
     tranches: list[str] = Field(default_factory=list)
     # Манифест (локальный файл или URL) со списком tranche — по одной записи на строку.
     manifest_path: str | None = None
-    output_dir: str = "data/raw/zinc22"
+    output_dir: str = "raw/zinc22"  # относительно data_dir
     shard_rows: int = 1_000_000
     delimiter: str = " "
     column_order: list[str] = Field(default_factory=lambda: ["smiles", "zinc_id"])
@@ -37,12 +37,52 @@ class Stage1Config(BaseModel):
 
 
 class Stage2Config(BaseModel):
-    """Настройки этапа 2 — дескрипторы и фильтры (RDKit, CPU)."""
+    """Настройки этапа 2 — дескрипторы и фильтры (RDKit, CPU).
 
-    input_dir: str = "data/raw/zinc22/shards"
-    output_dir: str = "data/intermediate/stage2_filtered"
+    Пути input_dir/output_dir задаются относительно data_dir.
+    """
+
+    input_dir: str = "raw/zinc22/shards"
+    output_dir: str = "intermediate/stage2_filtered"
     shard_rows: int = 1_000_000
     filter_rule: str = "lead-like"  # lead-like | lipinski | none
+
+
+class AdmetRule(BaseModel):
+    """Правило ADMET-фильтра: свойство + сравнение + порог."""
+
+    property: str
+    op: str = "<="  # <= >= < > == !=
+    value: float
+
+
+def _default_admet_rules() -> list[AdmetRule]:
+    return [
+        AdmetRule(property="hERG", op="<=", value=0.5),
+        AdmetRule(property="DILI", op="<=", value=0.5),
+        AdmetRule(property="ClinTox", op="<=", value=0.5),
+        AdmetRule(property="AMES", op="<=", value=0.5),
+        AdmetRule(property="Carcinogens_Lagunin", op="<=", value=0.5),
+        AdmetRule(property="CYP3A4_Veith", op="<=", value=0.5),
+        AdmetRule(property="CYP2D6_Veith", op="<=", value=0.5),
+        AdmetRule(property="PAINS_alert", op="==", value=0.0),
+        AdmetRule(property="BRENK_alert", op="==", value=0.0),
+        AdmetRule(property="HIA_Hou", op=">=", value=0.5),
+    ]
+
+
+class Stage3Config(BaseModel):
+    """Настройки этапа 3 — ADMET-фильтрация (ADMET-AI).
+
+    Пути input_dir/output_dir задаются относительно data_dir.
+    """
+
+    input_dir: str = "intermediate/stage2_filtered"
+    output_dir: str = "intermediate/stage3_admet"
+    shard_rows: int = 1_000_000
+    batch_size: int = 1000
+    device: str = "cpu"  # cpu | cuda | auto
+    filters: list[AdmetRule] = Field(default_factory=_default_admet_rules)
 
 
 class ThresholdsConfig(BaseModel):
@@ -62,6 +102,7 @@ class Config(BaseModel):
     target: TargetConfig = Field(default_factory=TargetConfig)
     stage1: Stage1Config = Field(default_factory=Stage1Config)
     stage2: Stage2Config = Field(default_factory=Stage2Config)
+    stage3: Stage3Config = Field(default_factory=Stage3Config)
     thresholds: ThresholdsConfig = Field(default_factory=ThresholdsConfig)
 
 
