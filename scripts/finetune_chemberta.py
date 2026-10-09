@@ -20,6 +20,8 @@ def main() -> None:
     p.add_argument("--max-samples", type=int, default=None, help="Ограничить выборку (dev)")
     p.add_argument("--epochs", type=int, default=3)
     p.add_argument("--batch-size", type=int, default=16)
+    p.add_argument("--device", default="cuda", choices=["cpu", "cuda", "auto"],
+                   help="Устройство: cuda для GPU-сервера, cpu для отладки")
     args = p.parse_args()
 
     cfg = load_config(args.config)
@@ -44,7 +46,7 @@ def main() -> None:
         rows,
         cfg.stage4.model_name,
         out_dir,
-        device="cpu",
+        device=args.device,
         epochs=args.epochs,
         batch_size=args.batch_size,
     )

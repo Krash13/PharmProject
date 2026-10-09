@@ -1,0 +1,119 @@
+# PharmProject — боевая конфигурация (Linux + 2× NVIDIA A100).
+# Скопируйте в config/config.yaml и заполните target.sequence.
+# Пути стадий задаются относительно data_dir (без префикса data/).
+
+data_dir: /data/pharmproject
+
+target:
+  name: InhA
+  uniprot_id: P9WGR1
+  # sequence: ...                 # ОБЯЗАТЕЛЬНО для этапа 5 (Boltz).
+  #                               # Взять: https://www.uniprot.org/uniprot/P9WGR1.fasta
+
+stage1:
+  base_url: https://files.docking.org/
+  subset: lead-like
+  # manifest_path: config/lead-like.manifest.txt   # список tranche — по строке
+  output_dir: raw/zinc22
+  shard_rows: 1000000
+  delimiter: " "
+  column_order: [smiles, zinc_id]
+  timeout_s: 60.0
+  max_retries: 5
+  retry_wait: 1.0
+
+stage2:
+  input_dir: raw/zinc22/shards
+  output_dir: intermediate/stage2_filtered
+  shard_rows: 1000000
+  filter_rule: lead-like   # lead-like | lipinski | none
+
+stage3:
+  input_dir: intermediate/stage2_filtered
+  output_dir: intermediate/stage3_admet
+  shard_rows: 1000000
+  batch_size: 1000
+  device: cuda   # cpu | cuda | auto
+  filters:
+    - {property: hERG, op: "<=", value: 0.5}
+    - {property: DILI, op: "<=", value: 0.5}
+    - {property: ClinTox, op: "<=", value: 0.5}
+    - {property: AMES, op: "<=", value: 0.5}
+    - {property: Carcinogens_Lagunin, op: "<=", value: 0.5}
+    - {property: CYP3A4_Veith, op: "<=", value: 0.5}
+    - {property: CYP2D6_Veith, op: "<=", value: 0.5}
+    - {property: PAINS_alert, op: "==", value: 0.0}
+    - {property: BRENK_alert, op: "==", value: 0.0}
+    - {property: HIA_Hou, op: ">=", value: 0.5}
+
+stage4:
+  input_dir: intermediate/stage3_admet
+  output_dir: intermediate/stage4_scored
+  checkpoint_path: artifacts/chemberta_InhA
+  model_name: seyonec/ChemBERTa-zinc-base-v1
+  batch_size: 128
+  shard_rows: 1000000
+  device: cuda   # cpu | cuda | auto
+  top_n: 10000
+
+stage5:
+  input_dir: intermediate/stage4_scored
+  output_dir: intermediate/stage5_boltz
+  boltz_command: boltz
+  device: cuda   # cpu | cuda | auto
+  batch_size: 32
+  shard_rows: 1000000
+  top_n: 1000
+  binder_threshold: 0.5
+
+stage6:
+  input_dir: intermediate/stage5_boltz
+  output_dir: intermediate/stage6_final_admet
+  base_url: https://admetmesh.scbdd.com
+  batch_size: 100
+  shard_rows: 1000000
+  timeout_s: 60.0
+  max_retries: 5
+  filters:
+    - {property: hERG, op: "<=", value: 0.5}
+    - {property: H-HT, op: "<=", value: 0.5}
+    - {property: DILI, op: "<=", value: 0.5}
+    - {property: Ames, op: "<=", value: 0.5}
+    - {property: CYP3A4-inh, op: "<=", value: 0.5}
+    - {property: CYP2D6-inh, op: "<=", value: 0.5}
+    - {property: PAINS, op: "==", value: 0.0}
+    - {property: Lipinski, op: "==", value: "Accepted"}
+    - {property: Pfizer, op: "==", value: "Accepted"}
+    - {property: GSK, op: "==", value: "Accepted"}
+
+stage7:
+  input_dir: intermediate/stage6_final_admet
+  output_dir: intermediate/stage7_pk
+  cl_column: CL
+  vss_column: VDss
+  fu_column: Fu
+  body_weight_kg: 70.0
+  vc: 4.5
+  qfast: 150.0
+  qslow: 30.0
+  dose: 100.0
+  max_time: 24.0
+  shard_rows: 1000000
+  optimize_dosing: true
+  cmin: 1.0
+  cmax: 10.0
+  horizon: 72.0
+  dose_min: 1.0
+  dose_max: 1000.0
+  tau_min: 4.0
+  tau_max: 24.0
+  ico_tmax: 200
+
+thresholds:
+  mw_min: 150.0
+  mw_max: 350.0
+  logp_max: 3.5
+  rot_bonds_max: 7
+  hbd_max: 5
+  hba_max: 10
+  pic50_min: 6.0
