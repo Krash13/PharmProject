@@ -5,16 +5,51 @@
 # =====================================================================
 set -euo pipefail
 
-PYTHON=${PYTHON:-python3.11}
+# --- Авто-выбор Python 3.11+ -----------------------------------------
+# Можно задать явно: PYTHON=python3.12 bash scripts/setup_prod.sh
+PYTHON="${PYTHON:-}"
 
-# Проверка версии Python: нужен 3.11+
-if ! "$PYTHON" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
-    echo "ОШИБКА: нужен Python 3.11+, а '$PYTHON' — это:"
-    "$PYTHON" --version 2>/dev/null || true
-    echo "Укажите интерпретатор явно, например:"
-    echo "  PYTHON=python3.12 bash scripts/setup_prod.sh"
+if [ -z "$PYTHON" ]; then
+    for cand in python3.13 python3.12 python3.11 python3; do
+        if command -v "$cand" >/dev/null 2>&1 \
+           && "$cand" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+            PYTHON="$cand"
+            break
+        fi
+    done
+fi
+
+if [ -z "$PYTHON" ] || ! "$PYTHON" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+    echo "===================================================================="
+    echo "ОШИБКА: не найден Python 3.11+."
+    echo ""
+    echo "Найденные интерпретаторы:"
+    for c in python3.13 python3.12 python3.11 python3; do
+        if command -v "$c" >/dev/null 2>&1; then
+            printf '  %-12s %s\n' "$c" "$($c --version 2>&1)"
+        fi
+    done
+    echo ""
+    echo "Как получить Python 3.11+:"
+    echo "  1) conda/mamba (рекомендуется для HPC):"
+    echo "     conda create -n pharm python=3.12 -y && conda activate pharm"
+    echo "     PYTHON=python bash scripts/setup_prod.sh"
+    echo ""
+    echo "  2) модульная система (Lmod):"
+    echo "     module avail python && module load python/3.12"
+    echo "     PYTHON=python bash scripts/setup_prod.sh"
+    echo ""
+    echo "  3) Ubuntu — PPA deadsnakes (python3.12 в старых версиях нет):"
+    echo "     sudo add-apt-repository ppa:deadsnakes/ppa && sudo apt update"
+    echo "     sudo apt install -y python3.11 python3.11-venv"
+    echo ""
+    echo "  4) uv:"
+    echo "     curl -LsSf https://astral.sh/uv/install.sh | sh && uv python install 3.12"
+    echo "===================================================================="
     exit 1
 fi
+
+echo "==> Использую: $PYTHON ($("$PYTHON" --version 2>&1))"
 
 echo "==> Создаю виртуальное окружение (.venv)"
 "$PYTHON" -m venv .venv
