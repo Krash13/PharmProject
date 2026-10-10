@@ -135,30 +135,30 @@ python -c 'import torch; print(torch.cuda.is_available(), torch.cuda.device_coun
 ```bash
 git clone https://github.com/Krash13/PharmProject.git && cd PharmProject
 
-# Быстрый путь — один скрипт:
+# Быстрый путь — один скрипт (ставит всё, включая Boltz и pypharm/krashemit):
 bash scripts/setup_prod.sh
 
-# Или вручную:
+# Или вручную (важен порядок и --no-deps):
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
-pip install -e .
-pip install "git+https://github.com/Krash13/KrasheMit.git@testing"   # оптимизация (этап 7)
-pip install "boltz[cuda]"                                            # Boltz (этап 5)
-pip install nvmolkit          # nvMolKit (этап 2 GPU, опционально)
-pip install pybind11          # C++-ускорение ICO (опционально)
+
+# 1) ядро + Boltz ОДНОЙ командой (резолвер видит все зависимости сразу):
+pip install -r requirements.txt -e . "boltz[cuda]"
+
+# 2) KrasheMit и PyPharm с --no-deps:
+#    их пин scipy<=1.13.0 конфликтует с Boltz (scipy==1.13.1), поэтому ставим
+#    без учёта их зависимостей (сами зависимости уже в requirements.txt)
+pip install --no-deps "git+https://github.com/Krash13/KrasheMit.git@testing"
+pip install --no-deps "git+https://github.com/Krash13/PyPharm.git"
+
+# 3) nvMolKit (этап 2 GPU, опционально):
+pip install nvmolkit
 ```
 
-> **Опционально — C++-ускорение оптимизации ICO (этап 7).** Склонируйте KrasheMit и соберите
-> `ico.cpp` через pybind11 (нужен C++-компилятор):
->
-> ```bash
-> pip install pybind11
-> python scripts/build_ico.py /path/to/KrasheMit/src/ico.cpp
-> ```
->
-> Если модуль `ico` не собран — оптимизатор автоматически использует Python-версию KrasheMit.
+> **C++-модуль `krashemit.ico`** собирается автоматически при `pip install krashemit` (если на
+> машине есть C++-компилятор и pybind11). Если не собрался — оптимизатор ICO автоматически
+> использует Python-версию KrasheMit (`ico.backend=python` в логах).
 
 ## 2. Конфигурация
 

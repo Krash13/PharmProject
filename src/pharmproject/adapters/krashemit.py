@@ -12,12 +12,17 @@ logger = structlog.get_logger()
 
 
 def _try_import_cpp():
-    try:
-        import ico  # собранный pybind11-модуль
+    import importlib
 
-        return ico
-    except Exception:
-        return None
+    # krashemit.ico — C++-модуль, который krashemit собирает автоматически
+    # при установке (setup.py, src/ico.cpp). ico — если собран вручную
+    # через scripts/build_ico.py.
+    for modname in ("krashemit.ico", "ico"):
+        try:
+            return importlib.import_module(modname)
+        except Exception:
+            continue
+    return None
 
 
 class IcoOptimizer:

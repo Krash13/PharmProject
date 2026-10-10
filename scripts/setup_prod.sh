@@ -3,9 +3,9 @@
 # Настройка боевого окружения PharmProject (Linux + NVIDIA GPU, 2×A100)
 # Требуется Python 3.11+.
 #
-# ВАЖНО: все зависимости ставятся ОДНОЙ командой pip, чтобы резолвер видел
-# их одновременно и подобрал совместимые версии (rdkit для Boltz и т.д.).
-# Старое .venv удаляется перед созданием нового.
+# ВАЖНО: ядро + Boltz ставятся ОДНОЙ командой pip (резолвер видит все
+# зависимости сразу). pypharm/krashemit ставятся с --no-deps, потому что
+# их пин scipy<=1.13.0 конфликтует с Boltz (scipy==1.13.1).
 # =====================================================================
 set -euo pipefail
 
@@ -42,7 +42,7 @@ fi
 
 echo "==> Использую: $PYTHON ($("$PYTHON" --version 2>&1))"
 
-# --- Чистое окружение (удаляем старое, если было) --------------------
+# --- Чистое окружение -------------------------------------------------
 echo "==> Пересоздаю .venv"
 rm -rf .venv
 "$PYTHON" -m venv .venv
@@ -50,26 +50,29 @@ source .venv/bin/activate
 
 echo "==> Python в venv: $(python --version)"
 
-# --- Установка всего ОДНОЙ командой ----------------------------------
-echo "==> Устанавливаю зависимости одной командой"
+# --- 1) Ядро + Boltz одной командой ----------------------------------
+echo "==> Устанавливаю ядро + Boltz одной командой"
 python -m pip install --upgrade pip
-python -m pip install \
-    -r requirements.txt \
-    -e . \
-    "boltz[cuda]" \
-    "git+https://github.com/Krash13/KrasheMit.git@testing"
+python -m pip install -r requirements.txt -e . "boltz[cuda]"
 
-# --- Опциональные GPU/ускорители --------------------------------------
-echo "==> nvMolKit (этап 2 GPU; опционально, если конфликтует с RDKit — пропускаем)"
+# --- 2) KrasheMit (--no-deps: пин scipy<=1.13.0 конфликтует с Boltz) ---
+#    setup.py собирает C++-модуль krashemit.ico (нужны компилятор C++ и pybind11).
+echo "==> KrasheMit (--no-deps)"
+python -m pip install --no-deps "git+https://github.com/Krash13/KrasheMit.git@testing"
+
+# --- 3) PyPharm (--no-deps по той же причине; krashemit уже стоит) ----
+echo "==> PyPharm (--no-deps)"
+python -m pip install --no-deps "git+https://github.com/Krash13/PyPharm.git"
+
+# --- 4) nvMolKit (этап 2 GPU; опционально) ---------------------------
+echo "==> nvMolKit (опционально)"
 python -m pip install nvmolkit || echo "    (nvMolKit пропущен — этап 2 на RDKit/CPU)"
-
-echo "==> pybind11 (C++ ICO; опционально)"
-python -m pip install pybind11 || true
 
 echo ""
 echo "Готово. Проверьте:"
 echo "  python --version"
-echo "  python -c 'import torch, rdkit; print(\"torch\", torch.__version__, \"cuda\", torch.cuda.is_available(), \"rdkit\", rdkit.__version__)'"
+echo "  python -c 'import torch, rdkit, scipy; print(\"torch\", torch.__version__, \"cuda\", torch.cuda.is_available(), \"rdkit\", rdkit.__version__, \"scipy\", scipy.__version__)'"
+echo "  python -c 'from PyPharm import BaseCompartmentModel; import krashemit; print(\"pypharm + krashemit OK\")'"
 echo "  nvidia-smi"
 echo ""
 echo "Дальше: cp config/config.prod.yaml config/config.yaml  и заполните target.sequence."
