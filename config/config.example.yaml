@@ -8,7 +8,7 @@ target:
   name: InhA               # мишень по умолчанию (туберкулёз)
   uniprot_id: P9WGR1
   # structure_path: path/to/target.pdb   # загрузить свою структуру
-  # sequence: MKV...                     # ОБЯЗАТЕЛЬНО для этапа 5 (Boltz): последовательность InhA
+  sequence: MTGLLDGKRILVSGIITDSSIAFHIARVAQEQGAQLVLTGFDRLRLIQRITDRLPAKAPLLELDVQNEEHLASLAGRVTEAIGAGNKLDGVVHSIGFMPQTGMGINPFFDAPYADVSKGIHISAYSYASMAKALLPIMNPGGSIVGMDFDPSRAMPAYNWMTVAKSALESVNRFVAREAGKYGVRSNLVAAGPIRTLAMSAIVGGALGEEAGAQIQLLEEGWDQRAPIGWNMKDATPVAKTVCALLSDWLPATTGDIIYADGGAHTQLL
 
 stage1:
   base_url: https://files.docking.org/

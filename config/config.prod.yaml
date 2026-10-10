@@ -7,8 +7,7 @@ data_dir: /data/pharmproject
 target:
   name: InhA
   uniprot_id: P9WGR1
-  # sequence: ...                 # ОБЯЗАТЕЛЬНО для этапа 5 (Boltz).
-  #                               # Взять: https://www.uniprot.org/uniprot/P9WGR1.fasta
+  sequence: MTGLLDGKRILVSGIITDSSIAFHIARVAQEQGAQLVLTGFDRLRLIQRITDRLPAKAPLLELDVQNEEHLASLAGRVTEAIGAGNKLDGVVHSIGFMPQTGMGINPFFDAPYADVSKGIHISAYSYASMAKALLPIMNPGGSIVGMDFDPSRAMPAYNWMTVAKSALESVNRFVAREAGKYGVRSNLVAAGPIRTLAMSAIVGGALGEEAGAQIQLLEEGWDQRAPIGWNMKDATPVAKTVCALLSDWLPATTGDIIYADGGAHTQLL
 
 stage1:
   base_url: https://files.docking.org/

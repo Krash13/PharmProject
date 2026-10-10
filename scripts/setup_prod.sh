@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =====================================================================
-# Настройка боевого окружения PharmProject (Linux + NVIDIA GPU, 2×A100)
+# Настройка боевого окружения PharmProject (этапы 1–6, Linux + NVIDIA GPU)
 # Требуется Python 3.11+.
 #
-# ВАЖНО: ядро + Boltz ставятся ОДНОЙ командой pip (резолвер видит все
-# зависимости сразу). pypharm/krashemit ставятся с --no-deps, потому что
-# их пин scipy<=1.13.0 конфликтует с Boltz (scipy==1.13.1).
+# Этап 7 (PK, PyPharm + KrasheMit) сюда НЕ входит: его зависимости
+# требуют numpy<2, что конфликтует с pyarrow/datasets (numpy>=2).
+# Для этапа 7 используйте отдельное окружение: scripts/setup_stage7.sh
 # =====================================================================
 set -euo pipefail
 
@@ -50,31 +50,16 @@ source .venv/bin/activate
 
 echo "==> Python в venv: $(python --version)"
 
-# --- 1) Ядро + Boltz одной командой ----------------------------------
-echo "==> Устанавливаю ядро + Boltz одной командой"
+# --- Установка всего ОДНОЙ командой (резолвер видит все зависимости) ---
+echo "==> Устанавливаю этапы 1–6 одной командой"
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt -e . "boltz[cuda]"
 
-# --- 2) KrasheMit (--no-deps: пин scipy<=1.13.0 конфликтует с Boltz) ---
-#    setup.py собирает C++-модуль krashemit.ico (нужны компилятор C++ и pybind11).
-echo "==> KrasheMit (--no-deps)"
-python -m pip install --no-deps "git+https://github.com/Krash13/KrasheMit.git@testing"
-
-# --- 3) PyPharm (--no-deps по той же причине; krashemit уже стоит) ----
-echo "==> PyPharm (--no-deps)"
-python -m pip install --no-deps "git+https://github.com/Krash13/PyPharm.git"
-
-# --- 4) nvMolKit (этап 2 GPU) ----------------------------------------
-# ПРОПУСКАЕМ: nvMolKit требует rdkit<=2026.03.5, а Boltz — rdkit==2026.03.6
-# (через cuik-molmaker-pin). Вместе в одном окружении несовместимы.
-# Этап 2 работает на RDKit (CPU).
-echo "==> nvMolKit пропущен (несовместим с rdkit==2026.03.6 под Boltz; этап 2 на RDKit/CPU)"
-
 echo ""
-echo "Готово. Проверьте:"
+echo "Готово (этапы 1–6). Проверьте:"
 echo "  python --version"
-echo "  python -c 'import torch, rdkit, scipy; print(\"torch\", torch.__version__, \"cuda\", torch.cuda.is_available(), \"rdkit\", rdkit.__version__, \"scipy\", scipy.__version__)'"
-echo "  python -c 'from PyPharm import BaseCompartmentModel; import krashemit; print(\"pypharm + krashemit OK\")'"
+echo "  python -c 'import torch, rdkit, scipy, numpy, pyarrow; print(\"torch\", torch.__version__, \"cuda\", torch.cuda.is_available(), \"numpy\", numpy.__version__, \"rdkit\", rdkit.__version__, \"scipy\", scipy.__version__, \"pyarrow\", pyarrow.__version__)'"
 echo "  nvidia-smi"
 echo ""
-echo "Дальше: cp config/config.prod.yaml config/config.yaml  и заполните target.sequence."
+echo "Этап 7 (PK) запускается в отдельном окружении: bash scripts/setup_stage7.sh"
+echo "Дальше: cp config/config.prod.yaml config/config.yaml"

@@ -36,7 +36,7 @@
 | 4 | Предсказание pIC50 | ~10–50 млн | топ 1 000–10 000 | ChemBERTa (дообученная на BindingDB) |
 | 5 | Докинг / аффинность | 1 000–10 000 | топ 100–1 000 | Boltz |
 | 6 | Финальный ADMET | 100–1 000 | 10–50 | ADMETlab 2.0 |
-| 7 | PK-модель + дозирование | 10–50 | PK-модели | PyPharm + KrasheMit (ICO) |
+| 7 | PK-модель + дозирование | 10–50 | PK-модели | PyPharm + KrasheMit (ICO, отдельное окружение) |
 
 ```mermaid
 flowchart LR
@@ -135,30 +135,17 @@ python -c 'import torch; print(torch.cuda.is_available(), torch.cuda.device_coun
 ```bash
 git clone https://github.com/Krash13/PharmProject.git && cd PharmProject
 
-# Быстрый путь — один скрипт (ставит всё, включая Boltz и pypharm/krashemit):
+# Этапы 1–6 — основное окружение (numpy>=2, pyarrow>=21, Boltz):
 bash scripts/setup_prod.sh
 
-# Или вручную (важен порядок и --no-deps):
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-
-# 1) ядро + Boltz ОДНОЙ командой (резолвер видит все зависимости сразу):
-pip install -r requirements.txt -e . "boltz[cuda]"
-
-# 2) KrasheMit и PyPharm с --no-deps:
-#    их пин scipy<=1.13.0 конфликтует с Boltz (scipy==1.13.1), поэтому ставим
-#    без учёта их зависимостей (сами зависимости уже в requirements.txt)
-pip install --no-deps "git+https://github.com/Krash13/KrasheMit.git@testing"
-pip install --no-deps "git+https://github.com/Krash13/PyPharm.git"
-
-# 3) nvMolKit НЕ ставим: он требует rdkit<=2026.03.5, а Boltz — rdkit==2026.03.6
-#    (через cuik-molmaker-pin). Вместе несовместимы; этап 2 работает на RDKit (CPU).
+# Этап 7 (PK) — отдельное окружение (PyPharm/KrasheMit требуют numpy<2):
+bash scripts/setup_stage7.sh
 ```
 
-> **C++-модуль `krashemit.ico`** собирается автоматически при `pip install krashemit` (если на
-> машине есть C++-компилятор и pybind11). Если не собрался — оптимизатор ICO автоматически
-> использует Python-версию KrasheMit (`ico.backend=python` в логах).
+> **Два окружения.** Этап 7 вынесен в отдельное окружение `.venv-stage7`, потому что
+> PyPharm/KrasheMit (через `numba`/`numbalsoda`) требуют `numpy<2`, а основное окружение
+> этапов 1–6 (через `pyarrow>=21`/`datasets 5.x`) требует `numpy>=2`. В одном venv они
+> несовместимы. Этап 7 читает Parquet от этапа 6 через `pyarrow 17` (формат обратно совместим).
 
 ## 2. Конфигурация
 
@@ -195,16 +182,11 @@ python scripts/finetune_chemberta.py --config config/config.yaml --device cuda -
 ## 4. Запуск воронки
 
 ```bash
-# вся воронка одной командой:
+# этапы 1–6 одной командой (в окружении .venv):
 bash scripts/run_funnel.sh config/config.yaml
 
-# или поэтапно (полезно для контроля):
-python -m pharmproject stage1 --config config/config.yaml --resume
-python -m pharmproject stage2 --config config/config.yaml --resume
-python -m pharmproject stage3 --config config/config.yaml --resume
-python -m pharmproject stage4 --config config/config.yaml --resume
-python -m pharmproject stage5 --config config/config.yaml --resume
-python -m pharmproject stage6 --config config/config.yaml --resume
+# этап 7 (PK) — в отдельном окружении .venv-stage7:
+source .venv-stage7/bin/activate
 python -m pharmproject stage7 --config config/config.yaml --resume
 ```
 
@@ -244,6 +226,9 @@ python -m pharmproject stage7 --config config/config.yaml --resume
   задача (потребует отдельного окружения под nvMolKit или согласования версий RDKit).
 - **2× A100.** Код использует одну GPU на процесс (по умолчанию `cuda:0`). Для ускорения Boltz
   (этап 5) можно распараллелить вручную: два процесса с `CUDA_VISIBLE_DEVICES=0` и `=1`.
+- **Этап 7 — отдельное окружение.** PyPharm/KrasheMit требуют `numpy<2` (через
+  `numba`/`numbalsoda`), что несовместимо с `pyarrow>=21`/`datasets 5.x` (`numpy>=2`). Поэтому этап 7
+  работает в `.venv-stage7` (`numpy 1.26` + PyPharm/KrasheMit) — см. `scripts/setup_stage7.sh`.
 - **Единицы ADMETlab (этап 7).** `CL` берётся как мл/мин/кг, `VDss` — л/кг, `Fu` — %; конверсия
   в л/ч, л и долю делается с весом `stage7.body_weight_kg` (70 кг). Сверьте единицы с выгрузкой
   ADMETlab перед финальным прогоном.
