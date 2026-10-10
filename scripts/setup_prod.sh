@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 # =====================================================================
 # Настройка боевого окружения PharmProject (Linux + NVIDIA GPU, 2×A100)
+# Требуется Python 3.11+ (иначе ADMET-AI v2 и nvMolKit не встанут).
 # =====================================================================
 set -euo pipefail
 
-PYTHON=${PYTHON:-python3}
+PYTHON=${PYTHON:-python3.11}
 
-echo "==> Создаю виртуальное окружение (.venv) на Python 3.11+"
+# Проверка версии Python: нужен 3.11+
+if ! "$PYTHON" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+    echo "ОШИБКА: нужен Python 3.11+, а '$PYTHON' — это:"
+    "$PYTHON" --version 2>/dev/null || true
+    echo "Укажите интерпретатор явно, например:"
+    echo "  PYTHON=python3.12 bash scripts/setup_prod.sh"
+    exit 1
+fi
+
+echo "==> Создаю виртуальное окружение (.venv)"
 "$PYTHON" -m venv .venv
 source .venv/bin/activate
 

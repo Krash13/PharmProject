@@ -22,7 +22,8 @@ numpy>=1.26
 rdkit>=2023.9
 
 # --- Этап 3: ADMET-AI (Chemprop v2) ----------------------------------
-admet-ai
+# v2 требует Python >=3.11 (у v1 жёсткие пины pandas/torch, конфликтующие с Boltz)
+admet-ai>=2.0
 
 # --- Этап 4: ChemBERTa (дообучение + инференс) -----------------------
 torch>=2.1
@@ -30,7 +31,8 @@ transformers>=4.40
 datasets>=2.18
 
 # --- Этап 7: PK-модель (PyPharm) и ОДУ (SciPy) -----------------------
-scipy>=1.11
+# scipy==1.13.0: PyPharm и KrasheMit требуют scipy<=1.13.0
+scipy==1.13.0
 git+https://github.com/Krash13/PyPharm.git#egg=pypharm
 
 # --- Тесты -----------------------------------------------------------
