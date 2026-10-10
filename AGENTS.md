@@ -145,10 +145,10 @@ PharmProject/
   (PDB) / последовательность.
 - **Пороги фильтров настраиваются при запуске** (конфиг + флаги CLI), не хардкодятся. Касается
   этапов 2–4 (границы MW/LogP/ADMET, отсечка по pIC50).
-- **Этап 7 (PK) — в отдельном окружении.** PyPharm/KrasheMit (через `numba`/`numbalsoda`) требуют
-  `numpy<2`, что несовместимо с `pyarrow>=21` / `datasets 5.x` (`numpy>=2`). Поэтому этапы 1–6
-  работают в основном окружении (numpy 2.x), а этап 7 — в отдельном `.venv-stage7`
-  (numpy 1.26 + PyPharm/KrasheMit) через `scripts/setup_stage7.sh`.
+- **Этап 7 (PK) — в отдельном окружении.** PyPharm/KrasheMit требуют `scipy<=1.13.0`, а Boltz —
+  `scipy==1.13.1`. Поэтому этапы 1–6 работают в основном окружении (scipy 1.13.1), а этап 7 — в
+  отдельном `.venv-stage7` (scipy 1.13.0 + PyPharm/KrasheMit) через `scripts/setup_stage7.sh`.
+  Оба окружения используют `numpy 1.26` (Boltz требует `numpy>=1.26,<2.0`).
 
 ## 9. Открытые вопросы
 

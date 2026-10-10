@@ -143,9 +143,8 @@ bash scripts/setup_stage7.sh
 ```
 
 > **Два окружения.** Этап 7 вынесен в отдельное окружение `.venv-stage7`, потому что
-> PyPharm/KrasheMit (через `numba`/`numbalsoda`) требуют `numpy<2`, а основное окружение
-> этапов 1–6 (через `pyarrow>=21`/`datasets 5.x`) требует `numpy>=2`. В одном venv они
-> несовместимы. Этап 7 читает Parquet от этапа 6 через `pyarrow 17` (формат обратно совместим).
+> PyPharm/KrasheMit требуют `scipy<=1.13.0`, а Boltz — `scipy==1.13.1`. Оба окружения используют
+> `numpy 1.26` (Boltz требует `numpy<2`); Parquet между ними совместим.
 
 ## 2. Конфигурация
 
@@ -226,9 +225,9 @@ python -m pharmproject stage7 --config config/config.yaml --resume
   задача (потребует отдельного окружения под nvMolKit или согласования версий RDKit).
 - **2× A100.** Код использует одну GPU на процесс (по умолчанию `cuda:0`). Для ускорения Boltz
   (этап 5) можно распараллелить вручную: два процесса с `CUDA_VISIBLE_DEVICES=0` и `=1`.
-- **Этап 7 — отдельное окружение.** PyPharm/KrasheMit требуют `numpy<2` (через
-  `numba`/`numbalsoda`), что несовместимо с `pyarrow>=21`/`datasets 5.x` (`numpy>=2`). Поэтому этап 7
-  работает в `.venv-stage7` (`numpy 1.26` + PyPharm/KrasheMit) — см. `scripts/setup_stage7.sh`.
+- **Этап 7 — отдельное окружение.** PyPharm/KrasheMit требуют `scipy<=1.13.0`, а Boltz —
+  `scipy==1.13.1`; поэтому этап 7 работает в `.venv-stage7` (`scipy 1.13.0` + PyPharm/KrasheMit) —
+  см. `scripts/setup_stage7.sh`. Оба окружения используют `numpy 1.26` (Boltz требует `numpy<2`).
 - **Единицы ADMETlab (этап 7).** `CL` берётся как мл/мин/кг, `VDss` — л/кг, `Fu` — %; конверсия
   в л/ч, л и долю делается с весом `stage7.body_weight_kg` (70 кг). Сверьте единицы с выгрузкой
   ADMETlab перед финальным прогоном.
