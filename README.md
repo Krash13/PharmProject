@@ -152,8 +152,8 @@ pip install -r requirements.txt -e . "boltz[cuda]"
 pip install --no-deps "git+https://github.com/Krash13/KrasheMit.git@testing"
 pip install --no-deps "git+https://github.com/Krash13/PyPharm.git"
 
-# 3) nvMolKit (этап 2 GPU, опционально):
-pip install nvmolkit
+# 3) nvMolKit НЕ ставим: он требует rdkit<=2026.03.5, а Boltz — rdkit==2026.03.6
+#    (через cuik-molmaker-pin). Вместе несовместимы; этап 2 работает на RDKit (CPU).
 ```
 
 > **C++-модуль `krashemit.ico`** собирается автоматически при `pip install krashemit` (если на
@@ -237,10 +237,11 @@ python -m pharmproject stage7 --config config/config.yaml --resume
 
 ## 7. Известные ограничения текущей версии
 
-- **Этап 2 (nvMolKit).** Сейчас дескрипторы считаются на **RDKit (CPU)**. Для обработки ~24 млрд
-  молекул нужно GPU-ускорение **nvMolKit** (`pip install nvmolkit`). Установите его на сервере;
-  переключение бэкенда RDKit→nvMolKit — следующая доработка (см. AGENTS.md). Для первого
-  тестового прогона используйте маленькое подмножество tranche в `stage1.manifest_path`.
+- **Этап 2 (nvMolKit).** Сейчас дескрипторы считаются на **RDKit (CPU)**. GPU-ускорение **nvMolKit**
+  в текущем окружении **недоступно**: nvMolKit требует `rdkit<=2026.03.5`, а Boltz — `rdkit==2026.03.6`
+  (через `cuik-molmaker-pin`), поэтому вместе они несовместимы. Для первого прогона используйте
+  маленькое подмножество tranche в `stage1.manifest_path`; ускорение 24 млрд на GPU — отдельная
+  задача (потребует отдельного окружения под nvMolKit или согласования версий RDKit).
 - **2× A100.** Код использует одну GPU на процесс (по умолчанию `cuda:0`). Для ускорения Boltz
   (этап 5) можно распараллелить вручную: два процесса с `CUDA_VISIBLE_DEVICES=0` и `=1`.
 - **Единицы ADMETlab (этап 7).** `CL` берётся как мл/мин/кг, `VDss` — л/кг, `Fu` — %; конверсия

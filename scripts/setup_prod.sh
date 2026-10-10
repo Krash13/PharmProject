@@ -64,9 +64,11 @@ python -m pip install --no-deps "git+https://github.com/Krash13/KrasheMit.git@te
 echo "==> PyPharm (--no-deps)"
 python -m pip install --no-deps "git+https://github.com/Krash13/PyPharm.git"
 
-# --- 4) nvMolKit (этап 2 GPU; опционально) ---------------------------
-echo "==> nvMolKit (опционально)"
-python -m pip install nvmolkit || echo "    (nvMolKit пропущен — этап 2 на RDKit/CPU)"
+# --- 4) nvMolKit (этап 2 GPU) ----------------------------------------
+# ПРОПУСКАЕМ: nvMolKit требует rdkit<=2026.03.5, а Boltz — rdkit==2026.03.6
+# (через cuik-molmaker-pin). Вместе в одном окружении несовместимы.
+# Этап 2 работает на RDKit (CPU).
+echo "==> nvMolKit пропущен (несовместим с rdkit==2026.03.6 под Boltz; этап 2 на RDKit/CPU)"
 
 echo ""
 echo "Готово. Проверьте:"
