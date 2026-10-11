@@ -16,6 +16,8 @@ from pharmproject.storage.store import STAGE2_SCHEMA, ParquetShardWriter
 
 logger = structlog.get_logger()
 
+PROGRESS_EVERY = 1_000_000  # логировать прогресс каждые N записей внутри шарда
+
 
 class Stage2Descriptors(Stage):
     name = "stage2"
@@ -40,19 +42,45 @@ class Stage2Descriptors(Stage):
         processed_shards = 0
         input_shards = sorted(in_dir.glob("*.parquet")) if in_dir.exists() else []
 
+        logger.info(
+            "stage2.start",
+            input_shards=len(input_shards),
+            output=str(out_dir),
+            filter=cfg.filter_rule,
+        )
+
         try:
-            for shard in input_shards:
+            for i, shard in enumerate(input_shards, 1):
                 if self.resume and progress.get(shard.name) == "done":
+                    logger.info("shard.skip", file=shard.name, index=f"{i}/{len(input_shards)}")
                     skipped += 1
                     continue
+
+                logger.info("shard.begin", file=shard.name, index=f"{i}/{len(input_shards)}")
+                shard_counter: Counter[str] = Counter()
                 table = pq.read_table(str(shard))
+                shard_records = 0
                 for row in table.to_pylist():
                     record, status = self._process(
                         row["smiles"], row["zinc_id"], row.get("tranche"), filter_fn, seen
                     )
                     counters[status] += 1
+                    shard_counter[status] += 1
+                    shard_records += 1
                     if record is not None:
                         writer.add(record)
+                    if shard_records % PROGRESS_EVERY == 0:
+                        logger.info("shard.progress", file=shard.name, records=shard_records)
+
+                logger.info(
+                    "shard.done",
+                    file=shard.name,
+                    records=shard_records,
+                    kept=shard_counter["kept"],
+                    filtered=shard_counter["filtered"],
+                    dup=shard_counter["dup"],
+                    invalid=shard_counter["invalid"],
+                )
                 progress[shard.name] = "done"
                 save_progress(progress_path, progress)
                 processed_shards += 1

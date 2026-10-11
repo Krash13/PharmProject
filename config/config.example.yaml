@@ -53,6 +53,13 @@ stage2:
   shard_rows: 1000000
   filter_rule: lead-like   # lead-like | lipinski | none
 
+stage2_parallel:
+  input_dir: raw/zinc22/shards        # как у stage2
+  output_dir: intermediate/stage2_filtered
+  shard_rows: 1000000
+  filter_rule: lead-like
+  workers: 0                          # 0 = все ядра CPU
+
 stage3:
   input_dir: intermediate/stage2_filtered
   output_dir: intermediate/stage3_admet

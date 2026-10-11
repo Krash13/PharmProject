@@ -54,6 +54,16 @@ stage2:
   shard_rows: 1000000
   filter_rule: lead-like   # lead-like | lipinski | none
 
+# Параллельный этап 2 (multiprocessing по шардам).
+# Запуск: python -m pharmproject stage2_parallel --config config/config.yaml
+# input_dir должен совпадать со stage2 (например raw/pubchem/shards для PubChem).
+stage2_parallel:
+  input_dir: raw/zinc22/shards
+  output_dir: intermediate/stage2_filtered
+  shard_rows: 1000000
+  filter_rule: lead-like
+  workers: 0                          # 0 = все ядра CPU
+
 stage3:
   input_dir: intermediate/stage2_filtered
   output_dir: intermediate/stage3_admet

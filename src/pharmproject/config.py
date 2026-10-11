@@ -86,6 +86,20 @@ class Stage2Config(BaseModel):
     filter_rule: str = "lead-like"  # lead-like | lipinski | none
 
 
+class Stage2ParallelConfig(BaseModel):
+    """Настройки параллельного этапа 2 — то же, но на нескольких CPU-ядрах.
+
+    Отличается от stage2 только числом процессов `workers`.
+    Дедупликация выполняется внутри каждого шарда (не глобально).
+    """
+
+    input_dir: str = "raw/zinc22/shards"
+    output_dir: str = "intermediate/stage2_filtered"
+    shard_rows: int = 1_000_000
+    filter_rule: str = "lead-like"  # lead-like | lipinski | none
+    workers: int = 0  # 0 = авто (все ядра CPU)
+
+
 class AdmetRule(BaseModel):
     """Правило ADMET-фильтра: свойство + сравнение + порог.
 
@@ -240,6 +254,7 @@ class Config(BaseModel):
     enamine: EnamineConfig = Field(default_factory=EnamineConfig)
     pubchem: PubchemConfig = Field(default_factory=PubchemConfig)
     stage2: Stage2Config = Field(default_factory=Stage2Config)
+    stage2_parallel: Stage2ParallelConfig = Field(default_factory=Stage2ParallelConfig)
     stage3: Stage3Config = Field(default_factory=Stage3Config)
     stage4: Stage4Config = Field(default_factory=Stage4Config)
     stage5: Stage5Config = Field(default_factory=Stage5Config)
