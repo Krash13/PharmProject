@@ -12,7 +12,7 @@ target:
 stage1:
   base_url: https://files.docking.org/
   subset: lead-like
-  # manifest_path: config/lead-like.manifest.txt   # список tranche — по строке
+  manifest_path: config/lead-like.manifest.txt   # список tranche — по строке
   output_dir: raw/zinc22
   shard_rows: 1000000
   delimiter: " "
