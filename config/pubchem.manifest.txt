@@ -1,0 +1,8 @@
+# PharmProject - манифест загрузки PubChem.
+# Полный файл CID-SMILES (~110 млн соединений, ~1.5 ГБ gzip):
+# каждая строка - "CID<TAB>SMILES" (canonical SMILES).
+#
+# Это единственный файл, покрывающий все соединения PubChem.
+# Для теста пайплайна можно сначала скачать его полностью (1.5 ГБ),
+# либо заменить на локальный обрезанный файл в формате "CID\tSMILES".
+https://ftp.ncbi.nlm.nih.gov/pubchem/Compound/Extras/CID-SMILES.gz

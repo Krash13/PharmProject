@@ -68,8 +68,8 @@ class Stage1Zinc22(Stage):
                 else:
                     path = Path(source)
 
-                for smiles, zinc_id in iter_records(path, cfg.delimiter, cfg.column_order):
-                    writer.add({"zinc_id": zinc_id, "smiles": smiles, "tranche": key})
+                for rec in iter_records(path, cfg.delimiter, cfg.column_order):
+                    writer.add({"zinc_id": compound_id_of(rec), "smiles": rec["smiles"], "tranche": key})
                     parsed_records += 1
 
                 progress[key] = "done"
@@ -106,6 +106,11 @@ def _source_key(source: str) -> str:
     return Path(source).name
 
 
+def compound_id_of(rec: dict) -> str:
+    """Возвращает ID соединения из записи (колонка, отличная от 'smiles')."""
+    return next(v for k, v in rec.items() if k != "smiles")
+
+
 def _read_manifest(manifest_path: str) -> list[str]:
     if manifest_path.startswith(("http://", "https://")):
         resp = httpx.get(manifest_path, timeout=60.0, follow_redirects=True, trust_env=False)
@@ -123,7 +128,7 @@ def _read_manifest(manifest_path: str) -> list[str]:
 def iter_records(
     path: Path, delimiter: str = " ", column_order: list[str] | None = None
 ):
-    """Построчно читает tranche-файл и отдаёт кортежи (smiles, zinc_id)."""
+    """Построчно читает файл и отдаёт словари {колонка: значение}."""
     column_order = column_order or ["smiles", "zinc_id"]
     opener = gzip.open if path.name.endswith(".gz") else open
     with opener(path, "rt", encoding="utf-8") as f:
@@ -135,5 +140,4 @@ def iter_records(
             if len(parts) < len(column_order):
                 logger.warning("stage1.skip_line", line=line[:80])
                 continue
-            values = dict(zip(column_order, parts[: len(column_order)]))
-            yield values[column_order[0]], values[column_order[1]]
+            yield dict(zip(column_order, parts[: len(column_order)]))

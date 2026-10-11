@@ -1,8 +1,8 @@
 """Этап 1 (альтернатива) — загрузка Enamine REAL.
 
-Скачивает файлы Enamine REAL (make-on-demand, ~38 млрд соединений) и пишет
-Parquet-шарды в том же формате, что и ZINC22-этап: поле `zinc_id` хранит ID
-соединения (для Enamine это его REAL-ID, например Z1234567890). Благодаря этому
+Скачивает файлы Enamine REAL (make-on-demand, ~10 млрд drug-like соединений)
+и пишет Parquet-шарды в том же формате, что и ZINC22-этап: поле `zinc_id`
+хранит ID соединения (для Enamine это его catalog ID). Благодаря этому
 этапы 2–7 работают без изменений.
 """
 
@@ -14,7 +14,7 @@ import structlog
 
 from pharmproject.adapters.enamine import EnamineClient
 from pharmproject.pipeline.base import PipelineContext, Stage, StageOutput
-from pharmproject.stages.stage1_zinc22 import _read_manifest, _source_key, iter_records
+from pharmproject.stages.stage1_zinc22 import _read_manifest, _source_key, compound_id_of, iter_records
 from pharmproject.storage.checkpoint import load_progress, save_progress
 from pharmproject.storage.store import ParquetShardWriter
 
@@ -24,14 +24,20 @@ logger = structlog.get_logger()
 class Stage1Enamine(Stage):
     name = "stage1_enamine"
 
-    def run(self, ctx: PipelineContext) -> StageOutput:
-        cfg = ctx.config.enamine
-        client = EnamineClient(
+    def _get_config(self, ctx: PipelineContext):
+        return ctx.config.enamine
+
+    def _make_client(self, cfg) -> EnamineClient:
+        return EnamineClient(
             base_url=cfg.base_url,
             timeout=cfg.timeout_s,
             max_retries=cfg.max_retries,
             retry_wait=cfg.retry_wait,
         )
+
+    def run(self, ctx: PipelineContext) -> StageOutput:
+        cfg = self._get_config(ctx)
+        client = self._make_client(cfg)
         sources = self._resolve_sources(cfg)
 
         out_root = Path(cfg.output_dir)
@@ -70,8 +76,8 @@ class Stage1Enamine(Stage):
                 else:
                     path = Path(source)
 
-                for smiles, compound_id in iter_records(path, cfg.delimiter, cfg.column_order):
-                    writer.add({"zinc_id": compound_id, "smiles": smiles, "tranche": key})
+                for rec in iter_records(path, cfg.delimiter, cfg.column_order):
+                    writer.add({"zinc_id": compound_id_of(rec), "smiles": rec["smiles"], "tranche": key})
                     parsed_records += 1
 
                 progress[key] = "done"
@@ -86,7 +92,7 @@ class Stage1Enamine(Stage):
             "skipped": skipped,
             "parquet_shards": len(written),
         }
-        logger.info("stage1_enamine.done", **stats)
+        logger.info(f"{self.name}.done", **stats)
         return StageOutput(paths=written, stats=stats)
 
     @staticmethod
@@ -97,6 +103,6 @@ class Stage1Enamine(Stage):
         sources.extend(cfg.files)
         if not sources:
             raise RuntimeError(
-                "Нет файлов Enamine REAL: задайте enamine.manifest_path или enamine.files"
+                "Нет файлов для загрузки: задайте manifest_path или files"
             )
         return sources

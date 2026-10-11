@@ -10,7 +10,7 @@ from pharmproject.stages.stage1_zinc22 import Stage1Zinc22, iter_records
 def test_iter_records_plain(sample_smi_path):
     rows = list(iter_records(sample_smi_path))
     assert len(rows) == 4
-    assert rows[0] == ("CCO", "ZINC000000000001")
+    assert rows[0] == {"smiles": "CCO", "zinc_id": "ZINC000000000001"}
 
 
 def test_iter_records_gz(tmp_path, sample_smi_path):
@@ -19,7 +19,7 @@ def test_iter_records_gz(tmp_path, sample_smi_path):
         f.write(sample_smi_path.read_bytes())
     rows = list(iter_records(gz))
     assert len(rows) == 4
-    assert rows[0] == ("CCO", "ZINC000000000001")
+    assert rows[0] == {"smiles": "CCO", "zinc_id": "ZINC000000000001"}
 
 
 def test_stage1_local_file(tmp_path, sample_smi_path):

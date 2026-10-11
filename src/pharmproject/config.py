@@ -55,6 +55,25 @@ class EnamineConfig(BaseModel):
     retry_wait: float = 1.0
 
 
+class PubchemConfig(BaseModel):
+    """Настройки альтернативного этапа 1 — загрузка PubChem.
+
+    Скачивание CID-SMILES (все соединения) с ftp.ncbi.nlm.nih.gov.
+    Файл tab-разделённый: `CID\\tSMILES` (CID первым).
+    """
+
+    base_url: str = "https://ftp.ncbi.nlm.nih.gov/pubchem/Compound/Extras"
+    manifest_path: str | None = None  # файл/URL со списком ссылок — по строке
+    files: list[str] = Field(default_factory=list)  # точечные URL/пути
+    output_dir: str = "raw/pubchem"  # относительно data_dir
+    shard_rows: int = 1_000_000
+    delimiter: str = "\t"  # CID<TAB>SMILES
+    column_order: list[str] = Field(default_factory=lambda: ["cid", "smiles"])
+    timeout_s: float = 60.0
+    max_retries: int = 5
+    retry_wait: float = 1.0
+
+
 class Stage2Config(BaseModel):
     """Настройки этапа 2 — дескрипторы и фильтры (RDKit, CPU).
 
@@ -219,6 +238,7 @@ class Config(BaseModel):
     target: TargetConfig = Field(default_factory=TargetConfig)
     stage1: Stage1Config = Field(default_factory=Stage1Config)
     enamine: EnamineConfig = Field(default_factory=EnamineConfig)
+    pubchem: PubchemConfig = Field(default_factory=PubchemConfig)
     stage2: Stage2Config = Field(default_factory=Stage2Config)
     stage3: Stage3Config = Field(default_factory=Stage3Config)
     stage4: Stage4Config = Field(default_factory=Stage4Config)
