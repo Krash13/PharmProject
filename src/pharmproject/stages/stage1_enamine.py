@@ -20,6 +20,8 @@ from pharmproject.storage.store import ParquetShardWriter
 
 logger = structlog.get_logger()
 
+PROGRESS_EVERY = 5_000_000  # логировать прогресс парсинга каждые N записей
+
 
 class Stage1Enamine(Stage):
     name = "stage1_enamine"
@@ -53,8 +55,10 @@ class Stage1Enamine(Stage):
         parsed_records = 0
         skipped = 0
 
+        logger.info(f"{self.name}.start", sources=len(sources), output=str(shard_dir))
+
         try:
-            for source in sources:
+            for i, source in enumerate(sources, 1):
                 if source.startswith(("http://", "https://")):
                     url = source
                 elif Path(source).exists():
@@ -64,9 +68,11 @@ class Stage1Enamine(Stage):
 
                 key = _source_key(url or source)
                 if self.resume and progress.get(key) == "done":
+                    logger.info("source.skip", file=key, index=f"{i}/{len(sources)}")
                     skipped += 1
                     continue
 
+                logger.info("source.begin", file=key, index=f"{i}/{len(sources)}")
                 if url is not None:
                     dest = dl_dir / key
                     if not dest.exists():
@@ -76,10 +82,16 @@ class Stage1Enamine(Stage):
                 else:
                     path = Path(source)
 
+                logger.info("source.parse", file=key)
+                file_records = 0
                 for rec in iter_records(path, cfg.delimiter, cfg.column_order):
                     writer.add({"zinc_id": compound_id_of(rec), "smiles": rec["smiles"], "tranche": key})
                     parsed_records += 1
+                    file_records += 1
+                    if file_records % PROGRESS_EVERY == 0:
+                        logger.info("parse.progress", file=key, records=file_records)
 
+                logger.info("source.done", file=key, records=file_records)
                 progress[key] = "done"
                 save_progress(progress_path, progress)
         finally:

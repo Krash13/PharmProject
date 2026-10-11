@@ -7,12 +7,16 @@ tranche-файлами (например .smi.gz) с files.docking.org.
 from __future__ import annotations
 
 import hashlib
+import time
 from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+import structlog
 import tenacity
+
+logger = structlog.get_logger()
 
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
@@ -103,9 +107,26 @@ class Zinc22Client:
                     return  # файл уже полный
                 resp.raise_for_status()
                 mode = "ab" if resp.status_code == 206 else "wb"
+                done = part.stat().st_size if resumed else 0
+                total = done + int(resp.headers.get("content-length", 0) or 0)
+                name = part.stem  # имя файла без ".part"
+                logger.info("download.start", file=name, resumed=resumed, bytes_done=done, bytes_total=total)
+                last = time.monotonic()
                 with part.open(mode) as f:
                     for chunk in resp.iter_bytes():
                         f.write(chunk)
+                        done += len(chunk)
+                        now = time.monotonic()
+                        if now - last >= 10.0:
+                            pct = (done / total * 100) if total else 0.0
+                            logger.info(
+                                "download.progress",
+                                file=name,
+                                bytes_done=done,
+                                bytes_total=total,
+                                percent=f"{pct:.1f}%",
+                            )
+                            last = now
 
     def _verify_checksum(self, path: Path, checksum: str) -> None:
         algo, _, expected = checksum.partition(":")
