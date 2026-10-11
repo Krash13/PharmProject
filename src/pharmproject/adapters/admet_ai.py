@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import os
 
+import structlog
+
+logger = structlog.get_logger()
+
 
 class AdmetAiAdapter:
     """Обёртка над ADMET-AI.
@@ -23,6 +27,15 @@ class AdmetAiAdapter:
             from admet_ai import ADMETModel
 
             self._model = ADMETModel()
+
+            cuda = False
+            try:
+                import torch
+
+                cuda = bool(torch.cuda.is_available())
+            except Exception:
+                pass
+            logger.info("admet.model_loaded", device=self.device, cuda_available=cuda)
         return self._model
 
     def predict(self, smiles_list: list[str]) -> list[dict | None]:

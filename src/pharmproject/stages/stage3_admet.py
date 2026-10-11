@@ -41,12 +41,24 @@ class Stage3Admet(Stage):
         processed_shards = 0
         input_shards = sorted(in_dir.glob("*.parquet")) if in_dir.exists() else []
 
+        logger.info(
+            "stage3.start",
+            input_shards=len(input_shards),
+            output=str(out_dir),
+            device=cfg.device,
+            batch_size=cfg.batch_size,
+        )
+
         try:
-            for shard in input_shards:
+            for i, shard in enumerate(input_shards, 1):
                 if self.resume and progress.get(shard.name) == "done":
+                    logger.info("shard.skip", file=shard.name, index=f"{i}/{len(input_shards)}")
                     skipped += 1
                     continue
+
+                logger.info("shard.begin", file=shard.name, index=f"{i}/{len(input_shards)}")
                 rows = pq.read_table(str(shard)).to_pylist()
+                shard_kept = shard_filtered = shard_failed = 0
                 for batch in _batches(rows, cfg.batch_size):
                     smiles = [r["smiles"] for r in batch]
                     try:
@@ -54,18 +66,30 @@ class Stage3Admet(Stage):
                     except Exception:
                         logger.exception("stage3.predict_failed", n=len(smiles))
                         counters["failed"] += len(smiles)
+                        shard_failed += len(smiles)
                         continue
                     for row, preds in zip(batch, preds_list):
                         if preds is None:
                             counters["failed"] += 1
+                            shard_failed += 1
                             continue
                         if passes_admet_filters(preds, cfg.filters):
                             record = dict(row)
                             record["admet"] = _serialize_preds(preds)
                             writer.add(record)
                             counters["kept"] += 1
+                            shard_kept += 1
                         else:
                             counters["filtered"] += 1
+                            shard_filtered += 1
+
+                logger.info(
+                    "shard.done",
+                    file=shard.name,
+                    kept=shard_kept,
+                    filtered=shard_filtered,
+                    failed=shard_failed,
+                )
                 progress[shard.name] = "done"
                 save_progress(progress_path, progress)
                 processed_shards += 1
