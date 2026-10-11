@@ -41,14 +41,15 @@ def compute_descriptors(mol: Chem.Mol) -> DescriptorSet:
 def parse_and_describe(smiles: str) -> tuple[str, str, DescriptorSet] | None:
     """Парсит SMILES и возвращает (canonical_smiles, inchi_key, descriptors).
 
-    Возвращает None, если SMILES невалидный.
+    Возвращает None, если SMILES невалидный или не удаётся канонизировать
+    (в т.ч. KekulizeException на необычных кольцах — встречается в PubChem).
     """
     try:
         mol = Chem.MolFromSmiles(smiles)
+        if mol is None or mol.GetNumAtoms() == 0:
+            return None
+        canonical = Chem.MolToSmiles(mol)
+        inchi_key = Chem.MolToInchiKey(mol)
+        return canonical, inchi_key, compute_descriptors(mol)
     except Exception:
         return None
-    if mol is None or mol.GetNumAtoms() == 0:
-        return None
-    canonical = Chem.MolToSmiles(mol)
-    inchi_key = Chem.MolToInchiKey(mol)
-    return canonical, inchi_key, compute_descriptors(mol)
