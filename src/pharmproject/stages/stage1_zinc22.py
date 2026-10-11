@@ -47,14 +47,19 @@ class Stage1Zinc22(Stage):
 
         try:
             for source in sources:
-                remote = source.startswith(("http://", "https://"))
-                key = _source_key(source)
+                if source.startswith(("http://", "https://")):
+                    url = source
+                elif Path(source).exists():
+                    url = None  # локальный файл
+                else:
+                    url = client.build_url(source)  # относительный путь -> base_url + path
+
+                key = _source_key(url or source)
                 if self.resume and progress.get(key) == "done":
                     skipped += 1
                     continue
 
-                if remote:
-                    url = client.build_url(source)
+                if url is not None:
                     dest = dl_dir / key
                     if not dest.exists():
                         client.download(url, dest)
@@ -62,8 +67,6 @@ class Stage1Zinc22(Stage):
                     path = dest
                 else:
                     path = Path(source)
-                    if not path.exists():
-                        raise FileNotFoundError(f"Локальный tranche не найден: {source}")
 
                 for smiles, zinc_id in iter_records(path, cfg.delimiter, cfg.column_order):
                     writer.add({"zinc_id": zinc_id, "smiles": smiles, "tranche": key})
