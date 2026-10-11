@@ -36,6 +36,25 @@ class Stage1Config(BaseModel):
     retry_wait: float = 1.0
 
 
+class EnamineConfig(BaseModel):
+    """Настройки альтернативного этапа 1 — загрузка Enamine REAL (make-on-demand).
+
+    Аналог ZINC22: скачивание по списку файлов (URL/пути) с докачкой и ретраями.
+    Выход пишется в том же формате (zinc_id = ID соединения Enamine).
+    """
+
+    base_url: str = "https://enamine.net"
+    manifest_path: str | None = None  # файл/URL со списком ссылок — по строке
+    files: list[str] = Field(default_factory=list)  # точечные URL/пути
+    output_dir: str = "raw/enamine"  # относительно data_dir
+    shard_rows: int = 1_000_000
+    delimiter: str = " "  # разделитель в .smi-файле Enamine
+    column_order: list[str] = Field(default_factory=lambda: ["smiles", "enamine_id"])
+    timeout_s: float = 60.0
+    max_retries: int = 5
+    retry_wait: float = 1.0
+
+
 class Stage2Config(BaseModel):
     """Настройки этапа 2 — дескрипторы и фильтры (RDKit, CPU).
 
@@ -199,6 +218,7 @@ class Config(BaseModel):
     data_dir: str = "data"
     target: TargetConfig = Field(default_factory=TargetConfig)
     stage1: Stage1Config = Field(default_factory=Stage1Config)
+    enamine: EnamineConfig = Field(default_factory=EnamineConfig)
     stage2: Stage2Config = Field(default_factory=Stage2Config)
     stage3: Stage3Config = Field(default_factory=Stage3Config)
     stage4: Stage4Config = Field(default_factory=Stage4Config)

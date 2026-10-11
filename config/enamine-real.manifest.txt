@@ -1,0 +1,13 @@
+# PharmProject - манифест файлов Enamine REAL (make-on-demand).
+# Каждая строка - ссылка (URL) или путь к .smi-файлу Enamine REAL.
+# Формат файла: "SMILES EnamineID" (пробел), например:
+#   CCO Z1234567890
+#
+# Ссылки на файлы REAL-датасета получите после регистрации на enamine.net
+# (раздел REAL Database / REAL Space). Подставьте реальные URL ниже.
+#
+# Пример (замените на актуальные ссылки):
+# https://enamine.net/storage/real/real-0001.smi.gz
+# https://enamine.net/storage/real/real-0002.smi.gz
+#
+# Строки с '#' игнорируются загрузчиком.

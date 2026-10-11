@@ -21,6 +21,20 @@ stage1:
   max_retries: 5
   retry_wait: 1.0
 
+# Альтернативный этап 1 — Enamine REAL (если ZINC22/docking.org недоступен).
+# Запуск: python -m pharmproject stage1_enamine --config config/config.yaml
+enamine:
+  base_url: https://enamine.net
+  manifest_path: config/enamine-real.manifest.txt   # ссылки на файлы REAL — по строке
+  # files: [https://.../real.smi]                   # или точечный список URL/путей
+  output_dir: raw/enamine
+  shard_rows: 1000000
+  delimiter: " "
+  column_order: [smiles, enamine_id]
+  timeout_s: 60.0
+  max_retries: 5
+  retry_wait: 1.0
+
 stage2:
   input_dir: raw/zinc22/shards
   output_dir: intermediate/stage2_filtered

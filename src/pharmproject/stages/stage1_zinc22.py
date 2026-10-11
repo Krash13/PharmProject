@@ -136,4 +136,4 @@ def iter_records(
                 logger.warning("stage1.skip_line", line=line[:80])
                 continue
             values = dict(zip(column_order, parts[: len(column_order)]))
-            yield values["smiles"], values["zinc_id"]
+            yield values[column_order[0]], values[column_order[1]]
