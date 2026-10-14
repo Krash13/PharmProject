@@ -49,9 +49,15 @@ source .venv/bin/activate
 
 echo "==> Python в venv: $(python --version)"
 
-# --- Установка всего ОДНОЙ командой (резолвер видит все зависимости) ---
-echo "==> Устанавливаю этапы 1–6 одной командой"
+# --- Установка этапов 1–6 --------------------------------------------
+echo "==> Устанавливаю этапы 1–6"
 python -m pip install --upgrade pip
+
+# torch под CUDA 12.4 (совместим с драйвером 550). Ставим отдельно из
+# cu124-индекса, т.к. на PyPI дефолтный torch — cu13 (нужен драйвер 570+).
+python -m pip install "torch==2.5.0" --index-url https://download.pytorch.org/whl/cu124
+
+# остальное (torch уже стоит cu124 и не перезапишется)
 python -m pip install -r requirements.txt -e . "boltz[cuda]"
 
 echo ""
