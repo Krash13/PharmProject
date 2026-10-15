@@ -25,6 +25,11 @@ class AdmetAiAdapter:
         if self._model is None:
             if self.device == "cpu":
                 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+            else:
+                # Одна видимая GPU: иначе ADMET-AI/Chemprop может попытаться
+                # использовать cuda:1 при нескольких картах (ошибка device=1).
+                visible = os.environ.get("CUDA_VISIBLE_DEVICES", "0")
+                os.environ["CUDA_VISIBLE_DEVICES"] = visible.split(",")[0].strip() or "0"
             from admet_ai import ADMETModel
 
             self._model = ADMETModel(
