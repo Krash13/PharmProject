@@ -137,6 +137,7 @@ class Stage3Config(BaseModel):
     shard_rows: int = 1_000_000
     batch_size: int = 1000
     device: str = "cpu"  # cpu | cuda | auto
+    num_workers: int = 16  # воркеры DataLoader (параллельный препроцессинг)
     filters: list[AdmetRule] = Field(default_factory=_default_admet_rules)
 
 

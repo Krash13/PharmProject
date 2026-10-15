@@ -16,8 +16,9 @@ class AdmetAiAdapter:
     не импортировали тяжёлые зависимости. По умолчанию работает на CPU.
     """
 
-    def __init__(self, device: str = "cpu") -> None:
+    def __init__(self, device: str = "cpu", num_workers: int = 16) -> None:
         self.device = device
+        self.num_workers = num_workers
         self._model = None
 
     def _load_model(self):
@@ -26,7 +27,11 @@ class AdmetAiAdapter:
                 os.environ["CUDA_VISIBLE_DEVICES"] = ""
             from admet_ai import ADMETModel
 
-            self._model = ADMETModel()
+            self._model = ADMETModel(
+                num_workers=self.num_workers,
+                include_physchem=False,  # физико-химия уже посчитана на этапе 2
+                drugbank_path=None,      # перцентили DrugBank не нужны (главный тормоз)
+            )
 
             cuda = False
             try:
@@ -35,7 +40,12 @@ class AdmetAiAdapter:
                 cuda = bool(torch.cuda.is_available())
             except Exception:
                 pass
-            logger.info("admet.model_loaded", device=self.device, cuda_available=cuda)
+            logger.info(
+                "admet.model_loaded",
+                device=self.device,
+                cuda_available=cuda,
+                num_workers=self.num_workers,
+            )
         return self._model
 
     def predict(self, smiles_list: list[str]) -> list[dict | None]:

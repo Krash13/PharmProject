@@ -30,14 +30,16 @@ pyarrow>=15.0,<18
 rdkit==2026.3.6
 
 # --- Этап 3: ADMET-AI v1 (41 свойство) -------------------------------
-# v2 требует torch>=2.8 (CUDA 12.6+, драйвер 560+), а драйвер 550
-# поддерживает только CUDA 12.4. Поэтому v1: torch 2.5 + cu124.
-# Все 10 свойств-фильтров из config (hERG, DILI, AMES, CYP*, ...) есть в v1.
-admet-ai<2.0
+# v1.4.0 использует chemprop v1 (старый API), torch==2.5.0, pandas<2.2.
+# v2 требует torch>=2.8 (CUDA 12.6+, драйвер 560+) — несовместимо с драйвером 550.
+admet-ai==1.4.0
+chemprop==1.6.1          # НЕ v2: у v2 другой data-API (нет MoleculeDataLoader)
+pandas<2.2.0             # admet-ai v1 требует pandas 2.0–2.1
 
 # --- Этап 4: ChemBERTa (torch ставится отдельно из cu124-индекса) ----
 transformers>=4.40
 datasets<5
+fsspec>=2023.1.0,<=2025.3.0   # datasets 4.x требует fsspec<=2025.3.0
 
 # --- SciPy (Boltz ==1.13.1) ------------------------------------------
 scipy==1.13.1

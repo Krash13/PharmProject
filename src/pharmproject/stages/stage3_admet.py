@@ -28,7 +28,7 @@ class Stage3Admet(Stage):
 
     def run(self, ctx: PipelineContext) -> StageOutput:
         cfg = ctx.config.stage3
-        adapter = self._adapter or AdmetAiAdapter(device=cfg.device)
+        adapter = self._adapter or AdmetAiAdapter(device=cfg.device, num_workers=cfg.num_workers)
 
         in_dir = _resolve(cfg.input_dir, ctx.data_dir)
         out_dir = _resolve(cfg.output_dir, ctx.data_dir)

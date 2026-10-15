@@ -49,22 +49,28 @@ source .venv/bin/activate
 
 echo "==> Python в venv: $(python --version)"
 
-# --- Установка этапов 1–6 --------------------------------------------
-echo "==> Устанавливаю этапы 1–6"
+# --- Установка этапов 1–4 (без Boltz) ---------------------------------
+echo "==> Устанавливаю этапы 1–4 (torch cu124 из cu124-индекса)"
 python -m pip install --upgrade pip
 
-# torch под CUDA 12.4 (совместим с драйвером 550). Ставим отдельно из
-# cu124-индекса, т.к. на PyPI дефолтный torch — cu13 (нужен драйвер 570+).
-python -m pip install "torch==2.5.0" --index-url https://download.pytorch.org/whl/cu124
+# torch закреплён на 2.5.0+cu124 (CUDA 12.4 = драйвер 550). Всё ставится
+# ОДНОЙ командой: cu124-индекс первичный, PyPI — дополнительный. Явный пин
+# "torch==2.5.0+cu124" не даёт pip подтянуть cu13 с PyPI.
+# Boltz (этап 5) НЕ входит: его cuequivariance требует torch>=2.11 (драйвер 560+).
+python -m pip install \
+    -r requirements.txt -e . "torch==2.5.0+cu124" \
+    --index-url https://download.pytorch.org/whl/cu124 \
+    --extra-index-url https://pypi.org/simple
 
-# остальное (torch уже стоит cu124 и не перезапишется)
-python -m pip install -r requirements.txt -e . "boltz[cuda]"
+# жёсткая проверка: torch обязан быть cu124
+python -c "import torch; v=torch.__version__; assert 'cu124' in v, f'torch={v}'; print('torch OK:', v, 'cuda:', torch.cuda.is_available())"
 
 echo ""
-echo "Готово (этапы 1–6). Проверьте:"
+echo "Готово (этапы 1–4). Проверьте:"
 echo "  python --version"
 echo "  python -c 'import torch, rdkit, scipy, numpy, pyarrow, datasets; print(\"numpy\", numpy.__version__, \"pyarrow\", pyarrow.__version__, \"scipy\", scipy.__version__, \"rdkit\", rdkit.__version__, \"datasets\", datasets.__version__, \"cuda\", torch.cuda.is_available())'"
 echo "  nvidia-smi"
 echo ""
-echo "Этап 7 (PK) запускается в отдельном окружении: bash scripts/setup_stage7.sh"
+echo "Этап 5 (Boltz) — отдельное окружение на машине с драйвером 560+: bash scripts/setup_boltz.sh"
+echo "Этап 7 (PK) — отдельное окружение: bash scripts/setup_stage7.sh"
 echo "Дальше: cp config/config.prod.yaml config/config.yaml"

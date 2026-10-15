@@ -70,6 +70,7 @@ stage3:
   shard_rows: 1000000
   batch_size: 1000
   device: cuda   # cpu | cuda | auto
+  num_workers: 24   # воркеры DataLoader (параллельный препроцессинг)
   filters:
     - {property: hERG, op: "<=", value: 0.5}
     - {property: DILI, op: "<=", value: 0.5}
